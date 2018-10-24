@@ -1,4 +1,6 @@
 # Distance metrics between chromosomes
+# Something we could use to promote diversity?
+# Will read through later
 export genetic_distance,
     positional_distance,
     constant_functional_distance,

@@ -1,3 +1,5 @@
+# All the different modes of crossing over
+# Not going to be relevant for CGP for Atari, but may read through later
 export single_point_crossover,
     random_node_crossover,
     aligned_node_crossover,
