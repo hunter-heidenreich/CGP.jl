@@ -4,6 +4,8 @@ using Logging
 using ArgParse
 import Images
 
+include("../graphing/graph_utils.jl")
+
 CGP.Config.init("cfg/atari.yaml")
 
 function play_atari(c::Chromosome, id::String, seed::Int64;
@@ -24,6 +26,7 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
 
     # Keep playing, while the game isn't over
     while ~game_over(game.ale)
+
         # Have the Chromosome process the current inputs
         output = process(c, get_rgb(game))
 
@@ -57,6 +60,8 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
     # Close the game and reset the seed
     close!(game)
     srand(seed_reset)
+
+    println("Final score: ", reward)
 
     # Return the reward and the list of outputs
     reward, outputs
@@ -104,7 +109,6 @@ end
 # Renders a gene
 function render_genes(genes::Array{Float64}, args::Dict;
                     ctype::DataType=CGPChromo, id::Int64=0)
-    include("graphing/graph_utils.jl")
 
     # Gets the Chromrosome
     nin, nout = get_params(args)
@@ -143,7 +147,8 @@ function render_genes(genes::Array{Float64}, args::Dict;
     # Take the new Chromosome with slight modification to draw
     chromo2 = ctype(new_genes, nin, nout)
     file =  string("graphs/", args["id"], "_", args["seed"], "_", id, ".pdf");
-    chromo_draw(chromo2, file; active_outputs=active_outputs)
+    # chromo_draw(chromo2, file, active_outputs=active_outputs)
+    chromo_draw(chromo2)
 end
 
 # We run this as a non-interactive experiment
