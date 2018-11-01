@@ -147,8 +147,8 @@ function render_genes(genes::Array{Float64}, args::Dict;
     # Take the new Chromosome with slight modification to draw
     chromo2 = ctype(new_genes, nin, nout)
     file =  string("graphs/", args["id"], "_", args["seed"], "_", id, ".pdf");
-    # chromo_draw(chromo2, file, active_outputs=active_outputs)
-    chromo_draw(chromo2)
+    chromo_draw(chromo2, file, active_outputs=active_outputs)
+    # chromo_draw(chromo2)
 end
 
 # We run this as a non-interactive experiment
