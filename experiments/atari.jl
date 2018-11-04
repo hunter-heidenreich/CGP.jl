@@ -57,8 +57,8 @@ function stop_playing_check(cur_reward::Float64, frame_step::Int64)
 end
 
 function score_velocity_score(reward_dict::Dict)
-    score_vel = 0
-    prev = 0
+    score_vel = 0.0
+    prev = 0.0
     step_scale = 1000
 
     for step in reward_dict
@@ -180,7 +180,7 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
     population_cnt += 1
 
     # Return the reward and the list of outputs
-    reward, outputs, reward
+    reward, outputs, vel_score
 end
 
 # Parses all the command line arguments
