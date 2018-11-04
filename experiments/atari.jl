@@ -167,6 +167,8 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
     close!(game)
     srand(seed_reset)
 
+    score_dict[(div(frames, 1000) + 1) * 1000] = reward
+
     vel_score = score_velocity_score(score_dict)
 
     println("Final game score: ", reward)
