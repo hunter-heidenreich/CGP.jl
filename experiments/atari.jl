@@ -8,9 +8,102 @@ include("../graphing/graph_utils.jl")
 
 CGP.Config.init("cfg/atari.yaml")
 
+max_reward_dict = Dict(
+    0 => -Inf,
+    1000 => -Inf,
+    2000 => -Inf,
+    3000 => -Inf,
+    4000 => -Inf,
+    5000 => -Inf,
+    6000 => -Inf,
+    7000 => -Inf,
+    8000 => -Inf,
+    9000 => -Inf,
+    10000 => -Inf,
+    11000 => -Inf,
+    12000 => -Inf,
+    13000 => -Inf,
+    14000 => -Inf,
+    15000 => -Inf,
+    16000 => -Inf,
+    17000 => -Inf,
+    18000 => -Inf
+)
+
+population_cnt = 1
+
+function stop_playing_check(cur_reward::Float64, frame_step::Int64)
+    global max_reward_dict
+    print("[", frame_step, "] Comparing: ", cur_reward, " to ", max_reward_dict[frame_step])
+
+    if max_reward_dict[frame_step] == -Inf
+        println()
+        return false
+    end
+
+    if max_reward_dict[frame_step] == 0
+        println()
+        return false
+    end
+
+    val = ((max_reward_dict[frame_step] - cur_reward) / max_reward_dict[frame_step])
+    println(" -- ", val)
+
+    if val > 0.5
+        return true
+    end
+
+    false
+end
+
+function score_velocity_score(reward_dict::Dict)
+    score_vel = 0
+    prev = 0
+    step_scale = 1000
+
+    for step in reward_dict
+        if step[1] > 0 && step[2] != -Inf
+            cur = step[2]
+
+            diff = cur - prev
+            score_vel += diff / step_scale
+
+            prev = cur
+        end
+    end
+
+    score_vel
+end
+
 function play_atari(c::Chromosome, id::String, seed::Int64;
                     render::Bool=false, folder::String=".", max_frames=18000)
 
+    global max_reward_dict
+    global population_cnt
+
+    println("Current individual evaluation: ", population_cnt)
+
+    score_dict = Dict(
+        0 => -Inf,
+        1000 => -Inf,
+        2000 => -Inf,
+        3000 => -Inf,
+        4000 => -Inf,
+        5000 => -Inf,
+        6000 => -Inf,
+        7000 => -Inf,
+        8000 => -Inf,
+        9000 => -Inf,
+        10000 => -Inf,
+        11000 => -Inf,
+        12000 => -Inf,
+        13000 => -Inf,
+        14000 => -Inf,
+        15000 => -Inf,
+        16000 => -Inf,
+        17000 => -Inf,
+        18000 => -Inf
+    )
     # Get the game with ID and seed
     game = Game(id, seed)
 
@@ -49,6 +142,19 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
             Images.save(filename, screen)
         end
 
+        if (frames > 0.3 * max_frames) && (frames < max_frames * 0.9)
+            if (frames % 1000) == 0
+
+                score_dict[frames] = reward
+
+                if stop_playing_check(reward, frames)
+                    println("Quitting early due to Early Stopping ")
+                    break
+                end
+
+            end
+        end
+
         # Always log the frames
         frames += 1
         if frames > max_frames
@@ -61,10 +167,20 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
     close!(game)
     srand(seed_reset)
 
-    println("Final score: ", reward)
+    vel_score = score_velocity_score(score_dict)
+
+    println("Final game score: ", reward)
+    println("Final velocity score: ", vel_score)
+
+    if vel_score > score_velocity_score(max_reward_dict)
+        println("New max fit individual!")
+        max_reward_dict = score_dict
+    end
+
+    population_cnt += 1
 
     # Return the reward and the list of outputs
-    reward, outputs
+    vel_score, outputs, reward
 end
 
 # Parses all the command line arguments
@@ -119,15 +235,19 @@ function render_genes(genes::Array{Float64}, args::Dict;
     mkpath(folder)
 
     # Plays the Atari with that individual
-    reward, out_counts = play_atari(chromo, args["id"], args["seed"];
-                                    render=true, folder=folder,
-                                    max_frames=args["frames"])
+    fit_score, out_counts, reward = play_atari(chromo, args["id"], args["seed"];
+                                        render=true, folder=folder,
+                                        max_frames=args["frames"])
 
     # Logs that individual's performance
     println(@sprintf("R: %s %d %d %0.5f %d %d",
                      args["id"], args["seed"], id, reward,
                      sum([n.active for n in chromo.nodes]),
                      length(chromo.nodes)))
+
+    println("Top individual scores: ")
+    println("\tFitness Score: ", fit_score)
+    println("\tGame Score: ", reward)
 
     # Copy our genes
     new_genes = deepcopy(chromo.genes)
@@ -180,7 +300,7 @@ if ~isinteractive()
     # We use [1] here because it selects the reward as the fitness
     # measure
     fit = x->play_atari(x, args["id"], args["seed"];
-                        max_frames=args["frames"])[1]
+                            max_frames=args["frames"])[1]
 
     # Actually run the EA experiment
     maxfit, best = ea(nin, nout, fit;
