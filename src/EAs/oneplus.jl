@@ -9,7 +9,7 @@ export oneplus
 function oneplus(nin::Int64, nout::Int64, fitness::Function;
                  ctype::DataType=CGPChromo, seed::Int64=0, expert::Any=nothing,
                  id::String="")
-    println("ONE PLUS")
+
     # Set up a population of CGP individuals
     population = Array{ctype}(Config.lambda)
 
@@ -43,7 +43,7 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
             # If it doesn't have a fitness set yet
             if fits[p] == -Inf
                 # Evaluate its fitness
-                fit = fitness(population[p], max_fit)
+                fit = fitness(population[p])
                 eval_count += 1
 
                 # If it is the best or equal to the best, we clone it and save it
@@ -70,8 +70,7 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
         end
 
         # Evaluate that generation
-        eval(Config.log_function)(id, seed, eval_count, max_fit, best, GA,
-                                  ctype, log_gen)
+        # eval(Config.log_function)(id, seed, eval_count, max_fit, best, fitness, ctype, log_gen)
 
         if eval_count == Config.total_evals
             break

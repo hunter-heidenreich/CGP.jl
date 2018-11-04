@@ -11,7 +11,7 @@ total_evals: 10000
 input_start: -1.0
 # Logging settings
 save_best: True
-log_config: True
+log_config: False
 log_function: ":log_best"
 # Mutation
 active_mutate: False
