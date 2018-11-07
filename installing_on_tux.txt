@@ -1,0 +1,56 @@
+ssh abc123@tux.cs.drexel.edu  # Type in your password
+mkdir cgp_experiment  # This creates a directory to store our experiment in
+cd cgp_experiment
+wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.4-linux-x86_64.tar.gz  # This will take some time (probably 30 mins)
+gunzip julia-0.6.4-linux-x86_64.tar.gz  # Unzip the compressed file
+tar -xvf julia-0.6.4-linux-x86_64.tar  # Open the project
+mv julia9**** julia/  # I can't remember what name it extracts as, but move it to julia/ so we can easily reference it
+cd julia/bin  # Enter into the directory with Julia in it
+export PATH=$PATH:$PWD  # This adds julia to our path so we can run julia anywhere (in this session)
+
+# We can also add it to our path forever by editing our .bashrc
+# This is done by:
+## vim ~/.bashrc  # To open the file in vim
+## :$  # This navigates to the bottom of the vim file
+## i   # This allows us to type in this file
+## Hit return to add a new line
+## Type out: export PATH=$PATH:~/cgp_experiment/julia/bin
+## esc
+## :wq # This saves and exits the file
+## source ~/.bashrc # This activates our new bash file
+
+cd ~/cgp_experiment  # To get back to our folder
+git clone https://github.com/hunter-heidenreich/CGP.jl.git  # Clone our repo
+cd CGP.jl/
+julia
+Pkg.clone("https://github.com/d9w/CGP.jl")  # Clones the repo to install
+Pkg.add.(["Logging", "PaddedViews", "Distributions", "YAML", "ArgParse", "TestImages", "Colors", "QuartzImageIO"])  # Installs a bunch of dependencies
+Pkg.clone("https://github.com/d9w/ArcadeLearningEnvironment.jl.git")  # clones the correct ALE
+Pkg.build("ArcadeLearningEnvironment")  # Build the ALE dependency
+
+# All of these next packages are for creating graphs as PDFs
+Pkg.add("LightGraphs")
+Pkg.add("MetaGraphs")
+Pkg.add("TikzGraphs")
+
+exit()  # To exit Julia
+
+cd ~/cgp_experiment  # Back to our folder
+git clone https://github.com/openai/atari-py.git  # Clones the Atari roms repo
+cd ~/.julia/v0.6/ArcadeLearningEnvironment/deps/  # Navigate to the dependency folder
+mkdir rom_files/  # Make a folder for the ROMs
+cp ~/cgp_experiment/atari-py/atari_py/atari_roms/* ./rom_files/  # Copy all the ROMs to the dependency folder
+cd ~/cgp_experiment  # Back to our folder
+
+## At this point we are done the installation process ##
+
+tmux  # This starts up a shell that won't disappear, even if you get disconnected
+cd ~/cgp_experiment/CGP.jl  # get to our folder for experiments
+
+# This is a test experiment
+# This will run 10 individuals for 100 frames each (max)
+# After running this, you'll see a graph in the graphs folder for the centipede
+# game
+julia experiments/atari.jl --render --frames 100 --total_evals 10
+
+# If you want to view the graph, you can pull it down to your machine using sftp
