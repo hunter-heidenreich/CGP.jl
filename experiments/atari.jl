@@ -1,6 +1,6 @@
 using ArcadeLearningEnvironment
 using CGP
-# using Logging
+using Logging
 using ArgParse
 import Images
 
@@ -158,7 +158,7 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
         # Always log the frames
         frames += 1
         if frames > max_frames
-            # Logging.debug(string("Termination due to frame count on ", id))
+            Logging.debug(string("Termination due to frame count on ", id))
             break
         end
     end
@@ -206,12 +206,12 @@ end
 # Gets the best Chromrosomes from a log file
 function get_bests(logfile::String)
     bests = []
-    # for line in readlines(logfile)
-        # if contains(line, ":C:")
-            # genes = eval(parse(split(line, ":C: ")[2]))
-            # append!(bests, [genes])
-        # end
-    # end
+    for line in readlines(logfile)
+        if contains(line, ":C:")
+            genes = eval(parse(split(line, ":C: ")[2]))
+            append!(bests, [genes])
+        end
+    end
     bests
 end
 
@@ -238,7 +238,7 @@ function render_genes(genes::Array{Float64}, args::Dict;
 
     # Plays the Atari with that individual
     fit_score, out_counts, reward = play_atari(chromo, args["id"], args["seed"];
-                                        render=true, folder=folder,
+                                        render=false, folder=folder,
                                         max_frames=args["frames"])
 
     # Logs that individual's performance
@@ -287,7 +287,7 @@ if ~isinteractive()
     srand(args["seed"])
 
     # Set up logging
-    # Logging.configure(filename=args["log"], level=INFO)
+    Logging.configure(filename=args["log"], level=INFO)
 
     # Get the inputs/outputs
     nin, nout = get_params(args)
@@ -309,7 +309,7 @@ if ~isinteractive()
                       seed=args["seed"], id=args["id"], ctype=ctype)
 
     # Log the maxfit individual
-    # Logging.info(@sprintf("E%0.6f", -maxfit))
+    Logging.info(@sprintf("E%0.6f", -maxfit))
 
     # If we are rendering, render this best Chromosome
     if args["render"]

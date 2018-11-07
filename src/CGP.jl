@@ -2,7 +2,7 @@ module CGP
 
 # This defines what the import module of 'CGP is'
 
-# using Logging
+using Logging
 using PaddedViews
 using Distributions
 
@@ -17,7 +17,7 @@ include("mutation.jl")
 include("crossover.jl")
 include("chromosomes/cgp.jl")
 include("chromosomes/pcgp.jl")
-# include("logging.jl")
+include("logging.jl")
 include("EAs/oneplus.jl")
 include("EAs/cgpneat.jl")
 include("EAs/ga.jl")

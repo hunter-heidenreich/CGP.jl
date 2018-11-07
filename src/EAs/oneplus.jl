@@ -70,7 +70,7 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
         end
 
         # Evaluate that generation
-        # eval(Config.log_function)(id, seed, eval_count, max_fit, best, fitness, ctype, log_gen)
+        eval(Config.log_function)(id, seed, eval_count, max_fit, best, fitness, ctype, log_gen)
 
         if eval_count == Config.total_evals
             break
