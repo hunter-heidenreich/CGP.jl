@@ -43,6 +43,7 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
 
         # We are going to loop through this using Threads.@threads
         for p in eachindex(population)
+            println("Evaluating #", p + eval_count, "(", (100 * (p + eval_count)/Config.total_evals), "%)")
             if fits[p] == -Inf
                 # Get fitness score for each and update the array
                 fit = fitness(population[p])
@@ -56,6 +57,8 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
         cur_max = maximum(fits)
         cur_max_id = indmax(fits)
 
+        println("Finished generation.")
+
         # If max > max_fit, then:
         if cur_max >= max_fit
             # # Update max_fit
@@ -64,6 +67,7 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
             best = clone(population[cur_max_id])
             # # Flip log_gen
             log_gen = true
+            println("New Max Fit: ", max_fit)
         end
 
         # eval_count += len(population)
@@ -88,7 +92,7 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
             # # break
             break
         end
-        
+
         # selection
         fits .= -Inf
         for p in eachindex(population)

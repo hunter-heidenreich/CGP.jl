@@ -8,6 +8,8 @@ include("../graphing/graph_utils.jl")
 
 CGP.Config.init("cfg/atari.yaml")
 
+max_reward_dict = Dict()
+
 function stop_playing_check(cur_reward::Float64, frame_step::Int64)
     global max_reward_dict
 
@@ -30,110 +32,105 @@ function stop_playing_check(cur_reward::Float64, frame_step::Int64)
     false
 end
 
-@everywhere begin
-    function score_velocity_score(reward_dict::Dict)
-        score_vel = 0.0
-        prev = 0.0
-        step_scale = 1000
+function score_velocity_score(reward_dict::Dict)
+    score_vel = 0.0
+    prev = 0.0
+    step_scale = 1000
 
-        for step in reward_dict
-            if step[1] > 0 && step[2] != -Inf
-                cur = step[2]
+    for step in reward_dict
+        if step[1] > 0 && step[2] != -Inf
+            cur = step[2]
 
-                diff = cur - prev
-                score_vel += diff / step_scale
+            diff = cur - prev
+            score_vel += diff / step_scale
 
-                prev = cur
-            end
+            prev = cur
         end
-
-        score_vel
     end
 
-    function play_atari(c::Chromosome, id::String, seed::Int64;
-                        render::Bool=false, folder::String=".", max_frames=18000,
-                        step_size=200)
+    score_vel
+end
 
-        score_dict = Dict()
-        # Get the game with ID and seed
-        game = Game(id, seed)
+function play_atari(c::Chromosome, id::String, seed::Int64;
+                    render::Bool=false, folder::String=".", max_frames=18000,
+                    step_size=200)
 
-        # Reset the seed
-        seed_reset = rand(0:100000)
-        srand(seed)
+    score_dict = Dict()
+    # Get the game with ID and seed
+    game = Game(id, seed)
 
-        # Reset all parameters
-        reward = 0.0
-        frames = 0
-        p_action = game.actions[1]
-        outputs = zeros(Int64, c.nout)
+    # Reset the seed
+    seed_reset = rand(0:100000)
+    srand(seed)
 
-        # Keep playing, while the game isn't over
-        while ~game_over(game.ale)
+    # Reset all parameters
+    reward = 0.0
+    frames = 0
+    p_action = game.actions[1]
+    outputs = zeros(Int64, c.nout)
 
-            # Have the Chromosome process the current inputs
-            output = process(c, get_rgb(game))
+    # Keep playing, while the game isn't over
+    while ~game_over(game.ale)
 
-            # Log the move count
-            outputs[indmax(output)] += 1
+        # Have the Chromosome process the current inputs
+        output = process(c, get_rgb(game))
 
-            # Do that action
-            action = game.actions[indmax(output)]
-            reward += act(game.ale, action)
+        # Log the move count
+        outputs[indmax(output)] += 1
 
-            # Possibly repeat action randomly
-            if rand() < 0.25
-                reward += act(game.ale, action) # repeat action here for seeding
-            end
+        # Do that action
+        action = game.actions[indmax(output)]
+        reward += act(game.ale, action)
 
-            # If we are rendering the game, save the screen to a file
-            if render
-                screen = draw(game)
-                filename = string(folder, "/", @sprintf("frame_%06d.png", frames))
-                Images.save(filename, screen)
-            end
+        # Possibly repeat action randomly
+        if rand() < 0.25
+            reward += act(game.ale, action) # repeat action here for seeding
+        end
 
-            if (frames % step_size) == 0
-                score_dict[frames] = reward
-            end
+        # If we are rendering the game, save the screen to a file
+        if render
+            screen = draw(game)
+            filename = string(folder, "/", @sprintf("frame_%06d.png", frames))
+            Images.save(filename, screen)
+        end
 
-            # Always log the frames
-            frames += 1
-            if frames > max_frames
-                Logging.debug(string("Termination due to frame count on ", id))
+        if (frames % step_size) == 0
+            score_dict[frames] = reward
+
+            if stop_playing_check(reward, frames)
+                println("Exit due to early stopping.")
                 break
             end
         end
 
-        # Close the game and reset the seed
-        close!(game)
-        srand(seed_reset)
-
-        score_dict[frames] = reward
-
-        vel_score = score_velocity_score(score_dict)
-
-        # Return the reward and the list of outputs
-        reward, outputs, vel_score
+        # Always log the frames
+        frames += 1
+        if frames > max_frames
+            Logging.debug(string("Termination due to frame count on ", id))
+            break
+        end
     end
-end
 
-# Parses all the command line arguments
-function get_args()
-    s = ArgParseSettings()
+    # Close the game and reset the seed
+    close!(game)
+    srand(seed_reset)
 
-    @add_arg_table(
-        s,
-        "--seed", arg_type = Int, default = 0,
-        "--log", arg_type = String, default = "atari.log",
-        "--id", arg_type = String, default = "centipede",
-        "--ea", arg_type = String, default = "oneplus",
-        "--chromosome", arg_type = String, default = "CGPChromo",
-        "--frames", arg_type = Int, default = 18000,
-        "--render", action = :store_const, constant = true, default = false,
-    )
+    score_dict[frames] = reward
 
-    parse_args(CGP.Config.add_arg_settings!(s))
+    vel_score = score_velocity_score(score_dict)
+
+    println("Final score: ", reward)
+    println("Final velocity: ", vel_score)
+
+    global max_reward_dict
+
+    if vel_score > score_velocity_score(max_reward_dict)
+        max_reward_dict = score_dict
+        println("Updated the local top fit!")
+    end
+
+    # Return the reward and the list of outputs
+    reward, outputs, vel_score
 end
 
 # Gets the best Chromrosomes from a log file
@@ -210,6 +207,24 @@ function render_genes(genes::Array{Float64}, args::Dict;
     # chromo_draw(chromo2)
 end
 
+# Parses all the command line arguments
+function get_args()
+    s = ArgParseSettings()
+
+    @add_arg_table(
+        s,
+        "--seed", arg_type = Int, default = 0,
+        "--log", arg_type = String, default = "atari.log",
+        "--id", arg_type = String, default = "centipede",
+        "--ea", arg_type = String, default = "oneplus",
+        "--chromosome", arg_type = String, default = "CGPChromo",
+        "--frames", arg_type = Int, default = 18000,
+        "--render", action = :store_const, constant = true, default = false,
+    )
+
+    parse_args(CGP.Config.add_arg_settings!(s))
+end
+
 # We run this as a non-interactive experiment
 if ~isinteractive()
 
@@ -227,7 +242,7 @@ if ~isinteractive()
     Logging.configure(filename=string(args["id"], ".log"), level=INFO)
 
     # Get the inputs/outputs
-    nin, nout = get_params(args)
+    @everywhere nin, nout = get_params(args)
 
     # Select evolution schema
     ea = eval(parse(args["ea"]))

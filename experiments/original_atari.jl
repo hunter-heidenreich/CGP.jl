@@ -8,6 +8,8 @@ include("../graphing/graph_utils.jl")
 
 CGP.Config.init("cfg/atari.yaml")
 
+max_reward_dict = Dict()
+
 function stop_playing_check(cur_reward::Float64, frame_step::Int64)
     global max_reward_dict
 
@@ -94,6 +96,11 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
 
         if (frames % step_size) == 0
             score_dict[frames] = reward
+
+            if stop_playing_check(reward, frames)
+                println("Exit due to early stopping.")
+                break
+            end
         end
 
         # Always log the frames
@@ -112,26 +119,18 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
 
     vel_score = score_velocity_score(score_dict)
 
+    println("Final score: ", reward)
+    println("Final velocity: ", vel_score)
+
+    global max_reward_dict
+
+    if vel_score > score_velocity_score(max_reward_dict)
+        max_reward_dict = score_dict
+        println("Updated the local top fit!")
+    end
+
     # Return the reward and the list of outputs
     reward, outputs, vel_score
-end
-
-# Parses all the command line arguments
-function get_args()
-    s = ArgParseSettings()
-
-    @add_arg_table(
-        s,
-        "--seed", arg_type = Int, default = 0,
-        "--log", arg_type = String, default = "atari.log",
-        "--id", arg_type = String, default = "centipede",
-        "--ea", arg_type = String, default = "oneplus",
-        "--chromosome", arg_type = String, default = "CGPChromo",
-        "--frames", arg_type = Int, default = 18000,
-        "--render", action = :store_const, constant = true, default = false,
-    )
-
-    parse_args(CGP.Config.add_arg_settings!(s))
 end
 
 # Gets the best Chromrosomes from a log file
@@ -208,6 +207,24 @@ function render_genes(genes::Array{Float64}, args::Dict;
     # chromo_draw(chromo2)
 end
 
+# Parses all the command line arguments
+function get_args()
+    s = ArgParseSettings()
+
+    @add_arg_table(
+        s,
+        "--seed", arg_type = Int, default = 0,
+        "--log", arg_type = String, default = "atari.log",
+        "--id", arg_type = String, default = "centipede",
+        "--ea", arg_type = String, default = "oneplus",
+        "--chromosome", arg_type = String, default = "CGPChromo",
+        "--frames", arg_type = Int, default = 18000,
+        "--render", action = :store_const, constant = true, default = false,
+    )
+
+    parse_args(CGP.Config.add_arg_settings!(s))
+end
+
 # We run this as a non-interactive experiment
 if ~isinteractive()
 
@@ -222,10 +239,10 @@ if ~isinteractive()
     srand(args["seed"])
 
     # Set up logging
-    Logging.configure(filename=string(args["id"], "_original.log"), level=INFO)
+    Logging.configure(filename=string(args["id"], ".log"), level=INFO)
 
     # Get the inputs/outputs
-    nin, nout = get_params(args)
+    @everywhere nin, nout = get_params(args)
 
     # Select evolution schema
     ea = eval(parse(args["ea"]))
