@@ -8,12 +8,6 @@ include("../graphing/graph_utils.jl")
 
 CGP.Config.init("cfg/atari.yaml")
 
-max_reward_dict = Dict()
-step_size = 500
-
-population_cnt = 1
-total_evaluations = 1
-
 function stop_playing_check(cur_reward::Float64, frame_step::Int64)
     global max_reward_dict
 
@@ -56,17 +50,8 @@ function score_velocity_score(reward_dict::Dict)
 end
 
 function play_atari(c::Chromosome, id::String, seed::Int64;
-                    render::Bool=false, folder::String=".", max_frames=18000)
-
-    global max_reward_dict
-    global population_cnt
-    global step_size
-    global total_evaluations
-
-    percent_complete = 100 * (population_cnt / total_evaluations)
-
-    println("Current individual evaluation: ", population_cnt, " (", percent_complete, "% done)")
-    Logging.info(string("Current individual evaluation: ", population_cnt, " (", percent_complete, "% done)"))
+                    render::Bool=false, folder::String=".", max_frames=18000,
+                    step_size=200)
 
     score_dict = Dict()
     # Get the game with ID and seed
@@ -107,17 +92,8 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
             Images.save(filename, screen)
         end
 
-        if (frames >= 0.5 * max_frames) && (frames < max_frames * 0.9)
-            if (frames % step_size) == 0
-
-                score_dict[frames] = reward
-
-                if stop_playing_check(reward, frames)
-                    Logging.debug(string("Quitting early due to Early Stopping: ", reward))
-                    break
-                end
-
-            end
+        if (frames % step_size) == 0
+            score_dict[frames] = reward
         end
 
         # Always log the frames
@@ -132,19 +108,9 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
     close!(game)
     srand(seed_reset)
 
-    score_dict[(div(frames, step_size) + 1) * step_size] = reward
+    score_dict[frames] = reward
 
     vel_score = score_velocity_score(score_dict)
-
-    println("Final game score: ", reward)
-    println("Final velocity score: ", vel_score)
-
-    if vel_score > score_velocity_score(max_reward_dict)
-        println("New max fit individual!")
-        max_reward_dict = score_dict
-    end
-
-    population_cnt += 1
 
     # Return the reward and the list of outputs
     reward, outputs, vel_score
@@ -245,8 +211,6 @@ end
 # We run this as a non-interactive experiment
 if ~isinteractive()
 
-    global total_evaluations
-
     # Get the args
     args = get_args()
 
@@ -268,8 +232,6 @@ if ~isinteractive()
 
     # Select chromosome type
     ctype = eval(parse(args["chromosome"]))
-
-    total_evaluations = eval(args["total_evals"]) + 1
 
     # Define the fitness function
     # We use [1] here because it selects the reward as the fitness
