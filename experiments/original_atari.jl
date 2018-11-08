@@ -97,7 +97,7 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
         if (frames % step_size) == 0
             score_dict[frames] = reward
 
-            if stop_playing_check(reward, frames)
+            if 0.5 * max_frames < frames && top_playing_check(reward, frames)
                 println("Exit due to early stopping.")
                 break
             end
