@@ -2,8 +2,6 @@
 
 export oneplus
 
-include("../logging.jl")
-
 # Pass it your inputs, outputs, and fitness function
 # The default Chromosome type is CGP, the seed is fixed, and there should be no
 # expert
@@ -86,7 +84,7 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
         eval(Config.log_function)(id, seed, eval_count, max_fit, best, fitness, ctype, true)
 
         # if eval_count > Config.total_evals, then
-        if eval_count == Config.total_evals
+        if eval_count >= Config.total_evals
             # # break
             break
         end

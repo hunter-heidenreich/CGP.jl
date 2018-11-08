@@ -13,7 +13,7 @@ function log_best(id::String, seed::Int64, eval_count::Int64, max_fit::Float64,
                                      string(ea), string(ctype), Config.to_string()))
         end
         Logging.info(logstr)
-        Logging.info(string("% complete: ", (100 * (eval_count / 5000))))
+        Logging.info(string(" Percentage complete: ", (100 * (eval_count / 5000)), "%"))
     end
     if Config.save_best
         Logging.info(@sprintf("C: %s", string(best.genes)))
