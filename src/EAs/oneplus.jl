@@ -41,15 +41,23 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
         # evaluation
         log_gen = false
 
-        # We are going to loop through this using Threads.@threads
-        Threads.@threads for p in eachindex(population)
-            if fits[p] == -Inf
-                # Get fitness score for each and update the array
-                fit = fitness(population[p])
-                # Update the fitness
-                fits[p] = fit
-            end
+        addprocs(length(population))
+
+        @everywhere begin
+            f = fitness
         end
+
+        fits = pmap(f, population)
+
+        # We are going to loop through this using Threads.@threads
+        # for p in eachindex(population)
+            # if fits[p] == -Inf
+                # Get fitness score for each and update the array
+                # fit = fitness(population[p])
+                # Update the fitness
+                # fits[p] = fit
+            # end
+        # end
         # This is the only thing we should do in this loop
 
         # Afterwards, get max and argmax of population
