@@ -40,15 +40,13 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
     while eval_count < Config.total_evals
         # evaluation
         log_gen = false
-
-        addprocs(length(population))
-        @everywhere f=$fitness
+        
         # @everywhere begin
             # fitness
             # f = fitness
         # end
 
-        fits = pmap(f, population)
+        fits = pmap(fitness, population)
 
         # We are going to loop through this using Threads.@threads
         # for p in eachindex(population)
