@@ -42,11 +42,11 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
         log_gen = false
 
         addprocs(length(population))
-
-        @everywhere begin
-            fitness
-            f = fitness
-        end
+        @everywhere f=bcast(fitness)
+        # @everywhere begin
+            # fitness
+            # f = fitness
+        # end
 
         fits = pmap(f, population)
 
