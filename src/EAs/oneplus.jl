@@ -2,6 +2,8 @@
 
 export oneplus
 
+include("../logging.jl")
+
 # Pass it your inputs, outputs, and fitness function
 # The default Chromosome type is CGP, the seed is fixed, and there should be no
 # expert
