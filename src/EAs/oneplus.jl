@@ -40,23 +40,16 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
     while eval_count < Config.total_evals
         # evaluation
         log_gen = false
-        
-        # @everywhere begin
-            # fitness
-            # f = fitness
-        # end
-
-        fits = pmap(fitness, population)
 
         # We are going to loop through this using Threads.@threads
-        # for p in eachindex(population)
-            # if fits[p] == -Inf
+        for p in eachindex(population)
+            if fits[p] == -Inf
                 # Get fitness score for each and update the array
-                # fit = fitness(population[p])
+                fit = fitness(population[p])
                 # Update the fitness
-                # fits[p] = fit
-            # end
-        # end
+                fits[p] = fit
+            end
+        end
         # This is the only thing we should do in this loop
 
         # Afterwards, get max and argmax of population
@@ -95,42 +88,7 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
             # # break
             break
         end
-
-
-
-        # Everything else should be the same
-
-        # Loop through each individual
-        # for p in eachindex(population)
-            # If it doesn't have a fitness set yet
-            # if fits[p] == -Inf
-                # Evaluate its fitness
-                # fit = fitness(population[p])
-                # eval_count += 1
-
-                # If it is the best or equal to the best, we clone it and save it
-                # if fit >= max_fit
-                    # best = clone(population[p])
-                    # if fit > max_fit
-                        # max_fit = fit
-
-                        # We only log generations where candidates exceed
-                        # previous performance
-                        # log_gen = true
-                    # end
-                # end
-
-                # Update the fitness
-                # fits[p] = fit
-
-                # Log if that was the last generation
-                # if eval_count == Config.total_evals
-                    # log_gen = true
-                    # break
-                # end
-            # end
-        # end
-
+        
         # selection
         fits .= -Inf
         for p in eachindex(population)
