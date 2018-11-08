@@ -42,7 +42,7 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
         log_gen = false
 
         addprocs(length(population))
-        @everywhere f=bcast(fitness)
+        @everywhere f=$fitness
         # @everywhere begin
             # fitness
             # f = fitness
