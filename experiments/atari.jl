@@ -30,90 +30,92 @@ function stop_playing_check(cur_reward::Float64, frame_step::Int64)
     false
 end
 
-function score_velocity_score(reward_dict::Dict)
-    score_vel = 0.0
-    prev = 0.0
-    step_scale = 1000
+@everywhere begin
+    function score_velocity_score(reward_dict::Dict)
+        score_vel = 0.0
+        prev = 0.0
+        step_scale = 1000
 
-    for step in reward_dict
-        if step[1] > 0 && step[2] != -Inf
-            cur = step[2]
+        for step in reward_dict
+            if step[1] > 0 && step[2] != -Inf
+                cur = step[2]
 
-            diff = cur - prev
-            score_vel += diff / step_scale
+                diff = cur - prev
+                score_vel += diff / step_scale
 
-            prev = cur
+                prev = cur
+            end
         end
+
+        score_vel
     end
 
-    score_vel
-end
+    function play_atari(c::Chromosome, id::String, seed::Int64;
+                        render::Bool=false, folder::String=".", max_frames=18000,
+                        step_size=200)
 
-function play_atari(c::Chromosome, id::String, seed::Int64;
-                    render::Bool=false, folder::String=".", max_frames=18000,
-                    step_size=200)
+        score_dict = Dict()
+        # Get the game with ID and seed
+        game = Game(id, seed)
 
-    score_dict = Dict()
-    # Get the game with ID and seed
-    game = Game(id, seed)
+        # Reset the seed
+        seed_reset = rand(0:100000)
+        srand(seed)
 
-    # Reset the seed
-    seed_reset = rand(0:100000)
-    srand(seed)
+        # Reset all parameters
+        reward = 0.0
+        frames = 0
+        p_action = game.actions[1]
+        outputs = zeros(Int64, c.nout)
 
-    # Reset all parameters
-    reward = 0.0
-    frames = 0
-    p_action = game.actions[1]
-    outputs = zeros(Int64, c.nout)
+        # Keep playing, while the game isn't over
+        while ~game_over(game.ale)
 
-    # Keep playing, while the game isn't over
-    while ~game_over(game.ale)
+            # Have the Chromosome process the current inputs
+            output = process(c, get_rgb(game))
 
-        # Have the Chromosome process the current inputs
-        output = process(c, get_rgb(game))
+            # Log the move count
+            outputs[indmax(output)] += 1
 
-        # Log the move count
-        outputs[indmax(output)] += 1
+            # Do that action
+            action = game.actions[indmax(output)]
+            reward += act(game.ale, action)
 
-        # Do that action
-        action = game.actions[indmax(output)]
-        reward += act(game.ale, action)
+            # Possibly repeat action randomly
+            if rand() < 0.25
+                reward += act(game.ale, action) # repeat action here for seeding
+            end
 
-        # Possibly repeat action randomly
-        if rand() < 0.25
-            reward += act(game.ale, action) # repeat action here for seeding
+            # If we are rendering the game, save the screen to a file
+            if render
+                screen = draw(game)
+                filename = string(folder, "/", @sprintf("frame_%06d.png", frames))
+                Images.save(filename, screen)
+            end
+
+            if (frames % step_size) == 0
+                score_dict[frames] = reward
+            end
+
+            # Always log the frames
+            frames += 1
+            if frames > max_frames
+                Logging.debug(string("Termination due to frame count on ", id))
+                break
+            end
         end
 
-        # If we are rendering the game, save the screen to a file
-        if render
-            screen = draw(game)
-            filename = string(folder, "/", @sprintf("frame_%06d.png", frames))
-            Images.save(filename, screen)
-        end
+        # Close the game and reset the seed
+        close!(game)
+        srand(seed_reset)
 
-        if (frames % step_size) == 0
-            score_dict[frames] = reward
-        end
+        score_dict[frames] = reward
 
-        # Always log the frames
-        frames += 1
-        if frames > max_frames
-            Logging.debug(string("Termination due to frame count on ", id))
-            break
-        end
+        vel_score = score_velocity_score(score_dict)
+
+        # Return the reward and the list of outputs
+        reward, outputs, vel_score
     end
-
-    # Close the game and reset the seed
-    close!(game)
-    srand(seed_reset)
-
-    score_dict[frames] = reward
-
-    vel_score = score_velocity_score(score_dict)
-
-    # Return the reward and the list of outputs
-    reward, outputs, vel_score
 end
 
 # Parses all the command line arguments
