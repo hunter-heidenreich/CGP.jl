@@ -55,8 +55,8 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
         # This is the only thing we should do in this loop
 
         # Afterwards, get max and argmax of population
-        cur_max = maximum(population)
-        cur_max_id = indmax(population)
+        cur_max = maximum(fit)
+        cur_max_id = indmax(fit)
 
         # If max > max_fit, then:
         if cur_max >= max_fit

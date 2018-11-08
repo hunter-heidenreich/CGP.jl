@@ -23,7 +23,7 @@ cd ~/cgp_experiment  # To get back to our folder
 git clone https://github.com/hunter-heidenreich/CGP.jl.git  # Clone our repo
 cd CGP.jl/
 julia
-Pkg.clone("https://github.com/d9w/CGP.jl")  # Clones the repo to install
+Pkg.clone("https://github.com/hunter-heidenreich/CGP.jl.git")  # Clones the repo to install
 Pkg.add.(["Logging", "PaddedViews", "Distributions", "YAML", "ArgParse", "TestImages", "Colors", "QuartzImageIO"])  # Installs a bunch of dependencies
 Pkg.clone("https://github.com/d9w/ArcadeLearningEnvironment.jl.git")  # clones the correct ALE
 Pkg.build("ArcadeLearningEnvironment")  # Build the ALE dependency
