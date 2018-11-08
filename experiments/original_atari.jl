@@ -109,7 +109,7 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
             Images.save(filename, screen)
         end
 
-        if (frames > 0.1 * max_frames) && (frames < max_frames * 0.9)
+        if (frames >= 0.5 * max_frames) && (frames < max_frames * 0.9)
             if (frames % step_size) == 0
 
                 score_dict[frames] = reward
