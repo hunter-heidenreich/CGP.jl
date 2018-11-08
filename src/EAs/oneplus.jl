@@ -44,6 +44,11 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
         # We are going to loop through this using Threads.@threads
         for p in eachindex(population)
             println("Evaluating #", p + eval_count, "(", (100 * (p + eval_count)/Config.total_evals), "%)")
+
+            if p + eval_count > Config.total_evals
+                break
+            end
+
             if fits[p] == -Inf
                 # Get fitness score for each and update the array
                 fit = fitness(population[p])
