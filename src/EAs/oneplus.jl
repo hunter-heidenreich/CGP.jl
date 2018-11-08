@@ -44,6 +44,7 @@ function oneplus(nin::Int64, nout::Int64, fitness::Function;
         addprocs(length(population))
 
         @everywhere begin
+            fitness
             f = fitness
         end
 
