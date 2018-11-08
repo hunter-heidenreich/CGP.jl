@@ -9,7 +9,7 @@ include("../graphing/graph_utils.jl")
 CGP.Config.init("cfg/atari.yaml")
 
 max_reward_dict = Dict()
-step_size = 200
+step_size = 500
 
 population_cnt = 1
 total_evaluations = 1
