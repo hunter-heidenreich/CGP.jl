@@ -54,3 +54,13 @@ cd ~/cgp_experiment/CGP.jl  # get to our folder for experiments
 julia experiments/atari.jl --render --frames 100 --total_evals 10
 
 # If you want to view the graph, you can pull it down to your machine using sftp
+
+# When you're ready to run the actual experiments, you can run the following
+# command, just substituting the --id flag with the proper game name as listed in
+# this repo: https://github.com/openai/atari-py/tree/master/atari_py/atari_roms
+# Just be sure to not include the `.bin`
+
+julia experiments/atari.jl --render --id GAME_NAME --frames 6000 --total_evals 5000
+
+# So for example, if I wanted to play the james bond game, I would run:
+# julia experiments/atari.jl --render --id jamesbond --frames 6000 --total_evals 5000
