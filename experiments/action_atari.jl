@@ -146,7 +146,14 @@ function play_atari(c::Chromosome, id::String, seed::Int64;
     println("Actions used: ", actions_used)
     # println("Final velocity: ", vel_score)
     global action_penalty_dict
-    reward_with_regularization = reward * action_penalty_dict[actions_used]
+
+    if reward > 0
+        reward_with_regularization = reward * action_penalty_dict[actions_used]
+    else
+        act = reward * action_penalty_dict[actions_used]
+        reward_with_regularization = reward + (reward - act)
+    end
+
     println("Final score (with penalty): ", reward_with_regularization)
 
     global max_reward_dict
